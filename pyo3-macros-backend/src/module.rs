@@ -350,6 +350,7 @@ pub fn pymodule_module_impl(
     }};
     let initialization = module_initialization(
         &name,
+        &full_name,
         ctx,
         module_def,
         options.submodule.is_some(),
@@ -393,6 +394,11 @@ pub fn pymodule_function_impl(
     let vis = &function.vis;
     let doc = get_doc(&function.attrs, None, ctx);
 
+    let full_name = if let Some(module) = &options.module {
+        format!("{}.{}", module.value.value(), name)
+    } else {
+        name.to_string()
+    };
     let initialization = module_initialization(
         &name,
         ctx,
@@ -441,6 +447,7 @@ pub fn pymodule_function_impl(
 
 fn module_initialization(
     name: &syn::Ident,
+    full_name: &str,
     ctx: &Ctx,
     module_def: TokenStream,
     is_submodule: bool,
@@ -449,7 +456,7 @@ fn module_initialization(
     let Ctx { pyo3_path, .. } = ctx;
     let pyinit_symbol = format!("PyInit_{}", name);
     let name = name.to_string();
-    let pyo3_name = LitCStr::new(CString::new(name).unwrap(), Span::call_site(), ctx);
+    let pyo3_name = LitCStr::new(CString::new(full_name).unwrap(), Span::call_site(), ctx);
 
     let mut result = quote! {
         #[doc(hidden)]
